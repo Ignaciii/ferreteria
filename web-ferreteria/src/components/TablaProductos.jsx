@@ -3,8 +3,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { useEffect, useState } from "react";
 
+
 const TablaProductos = () =>{
     const [productos, setProductos] = useState([]);
+    const [paginaActual, setPaginaActual] = useState(1)
 
     useEffect(() => {
         cargarProductos();
@@ -23,19 +25,23 @@ const TablaProductos = () =>{
     }
 
     
+    const elementosPorPagina = 10;
+    const indiceFinal =   paginaActual * elementosPorPagina;
+    const indiceInicial = indiceFinal - elementosPorPagina ;
+    const productosPorPagina = productos.slice(indiceInicial,indiceFinal)
+
+    const paginasTotales = Math.ceil(productos.length/elementosPorPagina)
+    
     return (productos.length === 0 ? 
-        <div>
+        <div className="container mt-4">
         <p className="lead ">Esperando productos...</p>
            <button className="btn btn-primary">regresar</button> 
         </div>
         
-        
-        
-        
-        
-        
-        :<div>
-            <h2 classNameName="lead ">📦Inventario de la ferreteria📦</h2>
+        :
+
+        <div className=" container mt-4">
+            <h2 classNameName="text-body-secondary">📦Inventario de la ferreteria📦</h2>
             <table className="table table-dark table-hover table-bordered">
                 <thead  >
                     <tr>
@@ -50,7 +56,7 @@ const TablaProductos = () =>{
                 </thead>
 
                 <tbody>
-                    {productos.map((p)=> (
+                    {productosPorPagina.map((p)=> (
                         <tr key={p.id} >
                             <td>{p.id}</td>
                             <td>{p.nombre}</td>
@@ -70,7 +76,17 @@ const TablaProductos = () =>{
                     ))}
                 </tbody>
             </table>
+            { paginasTotales > 1 && (
+            <div className="d-flex justify-content-center align-items-center">
+                
+                
+                <button className= "btn btn-secondary me-2 " onClick ={() => {setPaginaActual(paginaActual - 1)}} disabled = {paginaActual === 1}>⬅️ Anterior</button>
+             <span className="text-muted me-2"> {paginaActual} de {paginasTotales}</span>
+            <button className= "btn btn-secondary me-2" onClick ={() => {setPaginaActual(paginaActual + 1)}} disabled = {paginaActual === paginasTotales} >Siguiente ➡️</button>
+            </div>
+            )} 
         </div>
+        
     )
 
 }
