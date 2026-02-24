@@ -7,6 +7,9 @@ import { useEffect, useState } from "react";
 const TablaProductos = () =>{
     const [productos, setProductos] = useState([]);
     const [paginaActual, setPaginaActual] = useState(1)
+    const [cargando, setCargando] = useState(true)
+    const [busqueda,setBusqueda] = useState("")
+
 
     useEffect(() => {
         cargarProductos();
@@ -15,7 +18,9 @@ const TablaProductos = () =>{
     )
 
     const cargarProductos = () => {
-        axios.get("http://localhost:8080/api/productos").then((respuesta) => (setProductos(respuesta.data))).catch((error) => {console.log("Error ocurrido: ",error)})
+        axios.get("http://localhost:8080/api/productos").then((respuesta) => 
+            {setProductos(respuesta.data) 
+            setCargando(false)}).catch((error) => {console.log("Error ocurrido: ",error)})
 
     }
 
@@ -24,24 +29,52 @@ const TablaProductos = () =>{
         axios.delete("http://localhost:8080/api/productos/"+id).then(() => (cargarProductos())).catch((error) => {console.log("Error al borrar: ",error)})
     }
 
+    const manejarBusqueda = (elemento) => {
+        setBusqueda(elemento.target.value)
+        setPaginaActual(1)
+    }
+
+    const productosFiltrados = productos.filter((p) =>
+        p.nombre.toLowerCase().includes(busqueda.toLowerCase()) || 
+        p.codigo.toLowerCase().includes(busqueda.toLowerCase())
+    );
+
     
     const elementosPorPagina = 10;
     const indiceFinal =   paginaActual * elementosPorPagina;
     const indiceInicial = indiceFinal - elementosPorPagina ;
-    const productosPorPagina = productos.slice(indiceInicial,indiceFinal)
+    const productosPorPagina = productosFiltrados.slice(indiceInicial,indiceFinal)
 
     const paginasTotales = Math.ceil(productos.length/elementosPorPagina)
     
-    return (productos.length === 0 ? 
-        <div className="container mt-4">
-        <p className="lead ">Esperando productos...</p>
+    return (productos.length === 0 ? ( cargando === false ?<div className="container mt-4">
+            
+            <h1 className="  display-4 ">No hay productos cargados aun</h1>
+            <button className="btn btn-primary">regresar</button> </div>
+            :
+            <div className="container mt-4">
+            <p className="display-4 ">Esperando productos...</p>
            <button className="btn btn-primary">regresar</button> 
-        </div>
+           
+
+        </div>)
         
         :
 
         <div className=" container mt-4">
             <h2 classNameName="text-body-secondary">📦Inventario de la ferreteria📦</h2>
+            <div className="d-flex justify-content-center mb-4">
+                <input 
+                    type="text" 
+                    
+                    className="form-control shadow-sm" 
+                   
+                    style={{ maxWidth: '500px' }} 
+                    placeholder="🔍 Buscar por nombre o código..." 
+                    value={busqueda}
+                    onChange={manejarBusqueda}
+                />
+            </div>
             <table className="table table-dark table-hover table-bordered">
                 <thead  >
                     <tr>
@@ -88,6 +121,12 @@ const TablaProductos = () =>{
         </div>
         
     )
-
 }
+
 export default TablaProductos;
+
+
+/* <form class="d-flex" role="search">
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
+        <button class="btn btn-outline-success" type="submit">Search</button>
+      </form> */
