@@ -23,9 +23,19 @@ const TablaProductos = () =>{
     }
 
     
-    return (
+    return (productos.length === 0 ? 
         <div>
-            <h2 classNameName="lead ">Inventario de la ferreteria</h2>
+        <p className="lead ">Esperando productos...</p>
+           <button className="btn btn-primary">regresar</button> 
+        </div>
+        
+        
+        
+        
+        
+        
+        :<div>
+            <h2 classNameName="lead ">📦Inventario de la ferreteria📦</h2>
             <table className="table table-dark table-hover table-bordered">
                 <thead  >
                     <tr>

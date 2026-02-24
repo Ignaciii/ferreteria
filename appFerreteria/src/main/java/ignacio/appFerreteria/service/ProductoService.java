@@ -29,4 +29,24 @@ public class ProductoService {
         return productoRepositorio.findById(id).orElse(null);
     }
 
+    // en spring data el save tiene dos funciones, guardar y modificar en caso de
+    // encontrar el guardado
+    public Producto modificarProducto(Long id, Producto productoModificado) {
+        Producto producto = buscarProductoPorId(id);
+        if (producto != null && productoModificado != null) {
+            producto.setCodigo(productoModificado.getCodigo());
+            producto.setFechaUltimaCompra(productoModificado.getFechaUltimaCompra());
+            producto.setFechaUltimaVenta(productoModificado.getFechaUltimaVenta());
+            producto.setNombre(productoModificado.getNombre());
+            producto.setPrecioCosto(productoModificado.getPrecioCosto());
+            producto.setPrecioPublico(productoModificado.getPrecioPublico());
+            producto.setStockActual(productoModificado.getStockActual());
+            producto.setUnidadMedida(productoModificado.getUnidadMedida());
+
+            return guardarProducto(producto);
+        }
+        return null;
+
+    }
+
 }
