@@ -1,6 +1,7 @@
 import axios from "axios";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
 const TablaProductos = () => {
     const [productos, setProductos] = useState([]);
@@ -20,7 +21,18 @@ const TablaProductos = () => {
     }
 
     const eliminarProducto = (id) => {
-        //if (window.confirm("Estas apunto de borrar un producto, ¿estas seguro?"))
+        if (Swal.fire({
+            title: '¿Estás seguro, mostro?',
+            text: "No vas a poder deshacer esta acción",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33', // Rojo peligro
+            cancelButtonColor: '#3085d6', // Azul tranqui
+            confirmButtonText: 'Sí, borralo',
+            cancelButtonText: 'Cancelar',
+            background: '#1f1f1f', // Dark mode
+            color: '#fff'
+        }))
             axios.delete("http://localhost:8080/api/productos/" + id).then(() => (cargarProductos())).catch((error) => { console.log("Error al borrar: ", error) })
     }
 

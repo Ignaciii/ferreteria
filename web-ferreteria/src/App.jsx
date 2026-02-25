@@ -20,13 +20,13 @@ function App() {
         {/* BOTONERA */}
         <div className="d-flex justify-content-center mb-5 gap-3">
           <button 
-              className={`btn btn-lg ${opcion === 'Inventario' ? 'btn-primary' : 'btn-outline-light'}`}
+              className={`btn btn-lg ${opcion === 'Inventario' ? 'btn-light' : 'btn-secondary'}`}
               onClick={() => setOpcion('Inventario')}
           >
               📋 Ver Inventario
           </button>
           <button 
-              className={`btn btn-lg ${opcion === 'Formulario' ? 'btn-primary' : 'btn-outline-light'}`}
+              className={`btn btn-lg ${opcion === 'Formulario' ? 'btn-light' : 'btn-secondary'}`}
               onClick={() => setOpcion('Formulario')}
           >
               ➕ Cargar Producto
