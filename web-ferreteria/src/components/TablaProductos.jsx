@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
-const TablaProductos = () => {
+const TablaProductos = ({alEditar}) => {
     const [productos, setProductos] = useState([]);
     const [paginaActual, setPaginaActual] = useState(1)
     const [cargando, setCargando] = useState(true)
@@ -26,11 +26,11 @@ const TablaProductos = () => {
             text: "No vas a poder deshacer esta acción",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#d33', // Rojo peligro
-            cancelButtonColor: '#3085d6', // Azul tranqui
+            confirmButtonColor: '#d33', 
+            cancelButtonColor: '#3085d6', 
             confirmButtonText: 'Sí, borralo',
             cancelButtonText: 'Cancelar',
-            background: '#1f1f1f', // Dark mode
+            background: '#1f1f1f', 
             color: '#fff'
         }))
             axios.delete("http://localhost:8080/api/productos/" + id).then(() => (cargarProductos())).catch((error) => { console.log("Error al borrar: ", error) })
@@ -50,15 +50,13 @@ const TablaProductos = () => {
     const indiceFinal = paginaActual * elementosPorPagina;
     const indiceInicial = indiceFinal - elementosPorPagina;
     const productosPorPagina = productosFiltrados.slice(indiceInicial, indiceFinal)
-    const paginasTotales = Math.ceil(productosFiltrados.length / elementosPorPagina) // Corregido: usar productosFiltrados
+    const paginasTotales = Math.ceil(productosFiltrados.length / elementosPorPagina)
 
     return (
-        // Envolvemos todo en una caja gris (card) para que contraste con el fondo negro
         <div className="card bg-secondary text-white shadow-lg p-4">
             
             <h2 className="text-center mb-4">📦 Inventario de la Ferretería 📦</h2>
             
-            {/* Buscador */}
             <div className="d-flex justify-content-center mb-4">
                 <input
                     type="text"
@@ -70,7 +68,6 @@ const TablaProductos = () => {
                 />
             </div>
 
-            {/* Mensajes de carga o vacio */}
             {productos.length === 0 && !cargando ? (
                 <div className="text-center">
                     <h3 className="display-6">No hay productos cargados aun</h3>
@@ -80,7 +77,6 @@ const TablaProductos = () => {
                     <p className="display-6">Esperando productos...</p>
                 </div>
             ) : (
-                /* TABLA */
                 <>
                 <div className="table-responsive">
                     <table className="table table-dark table-hover table-bordered align-middle">
@@ -103,14 +99,27 @@ const TablaProductos = () => {
                                     <td>{p.nombre}</td>
                                     <td>{p.codigo}</td>
                                     <td>${p.precioPublico}</td>
-                                    <td>{p.stockActual}</td>
+                                    
+                                    {/* --- ACA ESTÁ LA MAGIA DEL INDICADOR DE STOCK BAJO --- */}
+                                    <td>
+                                        <span className={p.stockActual < p.puntoReposicion ? "text-danger fw-bold" : ""}>
+                                            {p.stockActual}
+                                        </span>
+                                        {p.stockActual < p.puntoReposicion && (
+                                            <span className="ms-2 fs-6" title={`Stock Bajo! El mínimo es ${p.puntoReposicion}`}>
+                                                ⚠️
+                                            </span>
+                                        )}
+                                    </td>
+                                    {/* ---------------------------------------------------- */}
+
                                     <td>{p.unidadMedida}</td>
                                     <td>
                                         <div className="d-flex justify-content-center gap-2">
-                                            <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(p.id)}> 
+                                            <button className="btn btn-outline-danger btn-sm" onClick={() => {eliminarProducto(p.id)}}> 
                                                 🗑️
                                             </button>
-                                            <button className="btn btn-outline-primary btn-sm">
+                                            <button className="btn btn-outline-primary btn-sm" onClick={() => {alEditar(p)}}>
                                                 ✏️
                                             </button>
                                         </div>
@@ -121,7 +130,6 @@ const TablaProductos = () => {
                     </table>
                 </div>
 
-                {/* PAGINACION */}
                 {paginasTotales > 0 && (
                     <div className="d-flex justify-content-center align-items-center mt-3">
                         <button className="btn btn-dark border-light me-2" onClick={() => setPaginaActual(paginaActual - 1)} disabled={paginaActual === 1}>

@@ -1,35 +1,84 @@
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 
-const FormularioCarga = () => {
+const FormularioCarga = ({ productoEditar, alTerminar }) => {
+    
     const [producto, setProducto] = useState({
         codigo: '',
         nombre: '',
         unidadMedida: 'UNIDAD',
         precioCosto: 0,
-        porcentaje: 0, // Nuevo campo para el recargo
+        porcentaje: 0, 
         precioPublico: 0,
         stockActual: 0,
         puntoReposicion: 0
     });
 
+    // ESTADO PARA EL CANDADO: Si editamos arranca bloqueado
+    const [mostrarSensible, setMostrarSensible] = useState(!productoEditar);
+
+    useEffect(() => {
+        if (productoEditar) {
+            // MODO EDICIÓN
+            setMostrarSensible(false);
+            
+            let porcentajeCalculado = 0;
+            if (productoEditar.precioCosto > 0) {
+                porcentajeCalculado = ((productoEditar.precioPublico - productoEditar.precioCosto) / productoEditar.precioCosto) * 100;
+            }
+
+            setProducto({
+                ...productoEditar,
+                // FIX CRÍTICO: Si viene null del backend, ponemos 0
+                puntoReposicion: productoEditar.puntoReposicion || 0, 
+                porcentaje: porcentajeCalculado.toFixed(2) 
+            });
+        } else {
+            // MODO NUEVO
+            setMostrarSensible(true);
+            limpiarFormulario();
+        }
+    }, [productoEditar]);
+
+
+    const limpiarFormulario = () => {
+        setProducto({
+            codigo: '', nombre: '', unidadMedida: 'UNIDAD',
+            precioCosto: 0, porcentaje: 0, precioPublico: 0, stockActual: 0, puntoReposicion: 0
+        });
+    }
+
+    const desbloquearPrecios = () => {
+        Swal.fire({
+            title: 'Seguridad',
+            text: 'Ingrese la clave de administrador para visualizar costos:',
+            input: 'password',
+            inputAttributes: { autocapitalize: 'off' },
+            showCancelButton: true,
+            confirmButtonText: 'Desbloquear',
+            cancelButtonText: 'Cancelar',
+            background: '#1f1f1f', color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (result.value === "123456") { 
+                    setMostrarSensible(true);
+                    Swal.fire({ title: 'Acceso Concedido', icon: 'success', timer: 1000, showConfirmButton: false, background: '#1f1f1f', color: '#fff' });
+                } else {
+                    Swal.fire({ title: 'Clave Incorrecta', text: 'Permiso denegado.', icon: 'error', background: '#1f1f1f', color: '#fff' });
+                }
+            }
+        });
+    }
+
     const manejarCambio = (evento) => {
         const { name, value } = evento.target;
-        
-        // 1. Hacemos una copia del producto actual para modificarla
         let nuevoProducto = { ...producto, [name]: value };
 
-        // 2. Si cambiaste el COSTO o el PORCENTAJE, recalculamos el precio final
         if (name === 'precioCosto' || name === 'porcentaje') {
-            // Convertimos a numero para que no concatene strings (ojo con el parseFloat)
             const costo = parseFloat(name === 'precioCosto' ? value : producto.precioCosto) || 0;
             const porc = parseFloat(name === 'porcentaje' ? value : producto.porcentaje) || 0;
-            
-            // LA FORMULA MAGICA:
             const precioFinal = costo + (costo * (porc / 100));
-            
-            // Guardamos con 2 decimales
             nuevoProducto.precioPublico = precioFinal.toFixed(2);
         }
 
@@ -38,118 +87,143 @@ const FormularioCarga = () => {
 
     const guardarProducto = (evento) => {
         evento.preventDefault();
-        
-        // Ojo acá: Si tu backend NO espera recibir el campo "porcentaje", 
-        // podrías filtrar el objeto antes de enviarlo. 
-        // Por ahora lo mandamos así, si el backend lo ignora, joya.
-        
-        axios.post("http://localhost:8080/api/productos", producto)
-            .then(() => {
-                Swal.fire({
-                    title: '¡Éxito!',
-                    text: 'El producto se cargó y se calculó el precio joya 🧮',
-                    icon: 'success',
-                    confirmButtonText: 'De una',
-                    background: '#1f1f1f',
-                    color: '#fff'
-                });
-                
-                // Limpiar form (reseteamos todo a 0)
-                setProducto({
-                    codigo: '', nombre: '', unidadMedida: 'UNIDAD',
-                    precioCosto: 0, porcentaje: 0, precioPublico: 0, stockActual: 0, puntoReposicion: 0
-                });
-            })
-            .catch((error) => { 
-                console.log("Error al cargar: ", error);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Algo explotó en el servidor',
-                    icon: 'error',
-                    background: '#1f1f1f',
-                    color: '#fff'
-                });
-            });
+
+        // VALIDACIONES
+        if (producto.stockActual < 0) {
+            Swal.fire({ title: 'Atención', text: 'El stock no puede ser negativo.', icon: 'warning', background: '#1f1f1f', color: '#fff' });
+            return; 
+        }
+
+        const swalDark = { background: '#1f1f1f', color: '#fff' };
+
+        if (producto.id) {
+            // PUT (Actualizar)
+            axios.put(`http://localhost:8080/api/productos/${producto.id}`, producto)
+                .then(() => {
+                    Swal.fire({ 
+                        title: 'Actualizado', 
+                        text: 'El producto ha sido modificado correctamente.', 
+                        icon: 'success', 
+                        confirmButtonText: 'Aceptar',
+                        ...swalDark 
+                    });
+                    limpiarFormulario();
+                    alTerminar();
+                })
+                .catch((error) => { console.log(error); Swal.fire({ title: 'Error', text: 'No se pudo actualizar el producto.', icon: 'error', ...swalDark }); });
+        } else {
+            // POST (Crear)
+            axios.post("http://localhost:8080/api/productos", producto)
+                .then(() => {
+                    Swal.fire({ 
+                        title: 'Guardado', 
+                        text: 'El producto se registró correctamente.', 
+                        icon: 'success', 
+                        confirmButtonText: 'Aceptar',
+                        ...swalDark 
+                    });
+                    limpiarFormulario();
+                })
+                .catch((error) => { console.log(error); Swal.fire({ title: 'Error', text: 'No se pudo guardar el producto.', icon: 'error', ...swalDark }); });
+        }
     }
 
     return (
         <div className="card bg-secondary text-white shadow-lg p-4 mb-5 rounded">
-            <h3 className="mb-4 text-center border-bottom pb-2">📦 Nuevo Producto (Calculadora Auto)</h3>
+            
+            <h3 className="mb-4 text-center border-bottom pb-2">
+                {producto.id ? "✏️ Editar Producto" : "📦 Nuevo Producto"}
+            </h3>
             
             <form onSubmit={guardarProducto} className="row g-3">
                 
-                {/* Fila 1: Codigo y Nombre */}
                 <div className="col-md-4">
                     <label className="form-label">Código</label>
-                    <input type="text" className="form-control" name="codigo" placeholder="Ej: TORN-01" 
+                    <input type="text" className="form-control" name="codigo" 
                         value={producto.codigo} onChange={manejarCambio} required />
                 </div>
                 
                 <div className="col-md-8">
                     <label className="form-label">Nombre</label>
-                    <input type="text" className="form-control" name="nombre" placeholder="Ej: Martillo Galáctico" 
+                    <input type="text" className="form-control" name="nombre" 
                         value={producto.nombre} onChange={manejarCambio} required />
                 </div>
 
-                {/* Fila 2: Unidad y Stock */}
-                <div className="col-md-6">
+                {/* --- GRILLA DE 3 COLUMNAS --- */}
+                <div className="col-md-4">
                     <label className="form-label">Unidad</label>
-                    <select className="form-select" name="unidadMedida" value={producto.unidadMedida} onChange={manejarCambio}>
+                    <select className="form-select" name="unidadMedida" value={producto.unidadMedida} required onChange={manejarCambio}>
                         <option value="UNIDAD">Unidad</option>
                         <option value="KG">Kilogramo</option>
                         <option value="METRO">Metro</option>
                     </select>
                 </div>
 
-                <div className="col-md-6">
-                    <label className="form-label">Stock Inicial</label>
-                    <input type="number" className="form-control" name="stockActual" 
+                <div className="col-md-4">
+                    <label className="form-label">Stock Actual</label>
+                    <input type="number" className="form-control" name="stockActual" min="0"
                         value={producto.stockActual} onChange={manejarCambio} required />
                 </div>
 
-        
+                <div className="col-md-4">
+                    <label className="form-label ">Stock Mínimo</label>
+                    <input type="number" className="form-control " name="puntoReposicion" min="0"
+                        placeholder="Ej: 5"
+                        value={producto.puntoReposicion} onChange={manejarCambio} required />
+                </div>
+                {/* --------------------------- */}
+
                 <div className="col-12 mt-4">
                     <div className="p-3 border rounded bg-dark bg-opacity-25">
-                        <h5 className="mb-3 text-info">💰 Calculadora de Precios</h5>
-                        <div className="row g-3">
-                            
-                        
-                            <div className="col-md-4">
-                                <label className="form-label">Precio Costo ($)</label>
-                                <input type="number" className="form-control" name="precioCosto" 
-                                    placeholder="0.00"
-                                    value={producto.precioCosto} onChange={manejarCambio} step="0.01" required />
-                            </div>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h5 className="text-info m-0">💰 Calculadora de Precios</h5>
+                            {!mostrarSensible && (
+                                <button type="button" className="btn btn-sm btn-outline-danger" onClick={desbloquearPrecios}>
+                                    🔒 Desbloquear Costos
+                                </button>
+                            )}
+                        </div>
 
-                            
-                            <div className="col-md-4">
-                                <label className="form-label">Recargo (%)</label>
-                                <div className="input-group">
-                                    <input type="number" className="form-control border-success" name="porcentaje" 
-                                        placeholder="Ej: 30"
-                                        value={producto.porcentaje} onChange={manejarCambio} />
-                                    <span className="input-group-text bg-success text-white">%</span>
+                        {!mostrarSensible ? (
+                            <div className="alert alert-dark d-flex align-items-center justify-content-between">
+                                <span>🔒 Costos ocultos por seguridad.</span>
+                                <h4 className="text-success m-0">Venta: ${producto.precioPublico}</h4>
+                            </div>
+                        ) : (
+                            <div className="row g-3">
+                                <div className="col-md-4">
+                                    <label className="form-label">Precio Costo ($)</label>
+                                    <input type="number" className="form-control" name="precioCosto" 
+                                        min="0" step="0.01" value={producto.precioCosto} onChange={manejarCambio} required />
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="form-label">Ganancia (%)</label>
+                                    <div className="input-group">
+                                        <input type="number" className="form-control border-success" name="porcentaje" 
+                                            min="0" value={producto.porcentaje} onChange={manejarCambio} required/>
+                                        <span className="input-group-text bg-success text-white">%</span>
+                                    </div>
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="form-label fw-bold text-warning">Precio al Público ($)</label>
+                                    <input type="number" className="form-control bg-dark text-warning fw-bold" name="precioPublico" 
+                                        value={producto.precioPublico} readOnly />
                                 </div>
                             </div>
-
-                            {/* PRECIO FINAL (Calculado) */}
-                            <div className="col-md-4">
-                                <label className="form-label fw-bold text-warning">Precio al Público ($)</label>
-                                <input type="number" className="form-control bg-dark text-warning fw-bold" name="precioPublico" 
-                                    value={producto.precioPublico} 
-                                    readOnly // <--- ESTO ES CLAVE: No se puede editar a mano
-                                />
-                                <small className="text-light opacity-50">Se calcula solo</small>
-                            </div>
-
-                        </div>
+                        )}
                     </div>
                 </div>
 
                 <div className="col-12 mt-4 text-center">
-                    <button type="submit" className="btn btn-primary btn-lg w-50 shadow">
-                        💾 Guardar Producto
+                    <button type="submit" className={`btn btn-lg shadow ${producto.id ? 'btn-warning text-dark' : 'btn-primary'}`} style={{ minWidth: '200px' }}>
+                        {producto.id ? "🔄 Modificar" : "💾 Guardar"}
                     </button>
+
+                    {producto.id && (
+                        <button type="button" className="btn btn-outline-light btn-lg ms-3 shadow" onClick={() => { limpiarFormulario(); alTerminar(); }}>
+                            ❌ Cancelar
+                        </button>
+                    )}
                 </div>
 
             </form>
