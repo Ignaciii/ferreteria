@@ -178,7 +178,7 @@ const FormularioCarga = ({ productoEditar, alTerminar }) => {
                         <div className="d-flex justify-content-between align-items-center mb-3">
                             <h5 className="text-info m-0">💰 Calculadora de Precios</h5>
                             {!mostrarSensible && (
-                                <button type="button" className="btn btn-sm btn-outline-danger" onClick={desbloquearPrecios}>
+                                <button type="button" className="btn btn-sm btn-danger" onClick={desbloquearPrecios}>
                                     🔒 Desbloquear Costos
                                 </button>
                             )}
