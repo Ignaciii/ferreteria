@@ -34,7 +34,7 @@ public class ProductoService {
     public Producto modificarProducto(Long id, Producto productoModificado) {
         Producto producto = buscarProductoPorId(id);
         if (producto != null && productoModificado != null) {
-            producto.setCodigo(productoModificado.getCodigo());
+            producto.setRubro(productoModificado.getRubro());
             producto.setFechaUltimaCompra(productoModificado.getFechaUltimaCompra());
             producto.setFechaUltimaVenta(productoModificado.getFechaUltimaVenta());
             producto.setNombre(productoModificado.getNombre());
@@ -42,6 +42,9 @@ public class ProductoService {
             producto.setPrecioPublico(productoModificado.getPrecioPublico());
             producto.setStockActual(productoModificado.getStockActual());
             producto.setUnidadMedida(productoModificado.getUnidadMedida());
+            
+            // ---> ACÁ ESTABA EL FANTASMA 👻 <---
+            producto.setPuntoReposicion(productoModificado.getPuntoReposicion()); 
 
             return guardarProducto(producto);
         }

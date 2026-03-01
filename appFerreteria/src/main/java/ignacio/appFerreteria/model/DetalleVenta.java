@@ -1,11 +1,11 @@
 package ignacio.appFerreteria.model;
 
-import java.time.LocalDate;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,25 +14,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-public class Producto {
+public class DetalleVenta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String rubro;
+    @ManyToOne
+    @JoinColumn(name = "producto_id")
+    private Producto producto;
 
-    private String nombre;
-
-    private String unidadMedida;
-
-    private Double puntoReposicion;
-    private Double stockActual;
-
-    private LocalDate fechaUltimaVenta;
-    private LocalDate fechaUltimaCompra;
-
-    private Double precioPublico;
-    private Double precioCosto;
-
+    private Double subtotal;
+    private Double precioUnitario;
+    private Double cantidad;
 }

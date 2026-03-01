@@ -21,8 +21,8 @@ const TablaProductos = ({alEditar}) => {
     }
 
     const eliminarProducto = (id) => {
-        if (Swal.fire({
-            title: '¿Estás seguro, mostro?',
+        Swal.fire({
+            title: '¿Estás seguro que deseas borrarlo?',
             text: "No vas a poder deshacer esta acción",
             icon: 'warning',
             showCancelButton: true,
@@ -32,8 +32,26 @@ const TablaProductos = ({alEditar}) => {
             cancelButtonText: 'Cancelar',
             background: '#1f1f1f', 
             color: '#fff'
-        }))
-            axios.delete("http://localhost:8080/api/productos/" + id).then(() => (cargarProductos())).catch((error) => { console.log("Error al borrar: ", error) })
+        }).then((result) => {
+            if (result.isConfirmed) {
+                axios.delete("http://localhost:8080/api/productos/" + id)
+                    .then(() => {
+                        Swal.fire({title: 'Borrado!', text: 'El producto voló.', icon: 'success', background: '#1f1f1f', color: '#fff'});
+                        cargarProductos();
+                    })
+                    .catch((error) => { 
+                        console.log("Error al borrar: ", error);
+                        // ACÁ ESTÁ LA MAGIA: Le avisamos al ferretero por qué no se borra.
+                        Swal.fire({
+                            title: 'Bloqueado por seguridad 🛑',
+                            text: 'No podés borrar este producto porque ya tiene ventas registradas en el historial. Si ya no lo vendés más, tocale el lápiz y ponele Stock Actual 0.',
+                            icon: 'error',
+                            background: '#1f1f1f',
+                            color: '#fff'
+                        });
+                    });
+            }
+        });
     }
 
     const manejarBusqueda = (elemento) => {
@@ -43,7 +61,7 @@ const TablaProductos = ({alEditar}) => {
 
     const productosFiltrados = productos.filter((p) =>
         p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        p.codigo.toLowerCase().includes(busqueda.toLowerCase())
+        p.rubro.toLowerCase().includes(busqueda.toLowerCase())
     );
 
     const elementosPorPagina = 10;
@@ -84,7 +102,7 @@ const TablaProductos = ({alEditar}) => {
                             <tr>
                                 <th>ID</th>
                                 <th>Nombre</th>
-                                <th>Codigo</th>
+                                <th>Rubro</th>
                                 <th>Precio</th>
                                 <th>Stock</th>
                                 <th>Unidad</th>
@@ -97,10 +115,9 @@ const TablaProductos = ({alEditar}) => {
                                 <tr key={p.id} >
                                     <td>{p.id}</td>
                                     <td>{p.nombre}</td>
-                                    <td>{p.codigo}</td>
+                                    <td>{p.rubro}</td>
                                     <td>${p.precioPublico}</td>
                                     
-                                    {/* --- ACA ESTÁ LA MAGIA DEL INDICADOR DE STOCK BAJO --- */}
                                     <td>
                                         <span className={p.stockActual < p.puntoReposicion ? "text-danger fw-bold" : ""}>
                                             {p.stockActual}
@@ -111,7 +128,6 @@ const TablaProductos = ({alEditar}) => {
                                             </span>
                                         )}
                                     </td>
-                                    {/* ---------------------------------------------------- */}
 
                                     <td>{p.unidadMedida}</td>
                                     <td>

@@ -30,7 +30,7 @@ const IngresarPedido = () => {
         if (termino.length > 0) {
             const filtrados = productos.filter(p => 
                 p.nombre.toLowerCase().includes(termino.toLowerCase()) || 
-                p.codigo.toLowerCase().includes(termino.toLowerCase())
+                p.rubro.toLowerCase().includes(termino.toLowerCase())
             );
             setCoincidencias(filtrados);
         } else {
@@ -124,7 +124,7 @@ const IngresarPedido = () => {
                                                 Stock: {p.stockActual} (Mín: {p.puntoReposicion})
                                             </span>
                                         </div>
-                                        <small className="text-muted">Cód: {p.codigo}</small>
+                                        <small className="text-muted">Cód: {p.rubro}</small>
                                     </button>
                                 ))}
                             </ul>
@@ -166,7 +166,7 @@ const IngresarPedido = () => {
                                 <tbody>
                                     {productosFaltantes.map(p => (
                                         <tr key={p.id}>
-                                            <td>{p.codigo}</td>
+                                            <td>{p.rubro}</td>
                                             <td>{p.nombre}</td>
                                             <td className="text-center text-danger fw-bold">{p.stockActual}</td>
                                             <td className="text-center">{p.puntoReposicion}</td>
@@ -193,7 +193,7 @@ const IngresarPedido = () => {
                         </div>
                     ) : (
                         <div className="alert alert-success text-center">
-                            ¡El stock está joya! No hay ningún producto por debajo del mínimo. 🎉
+                            ¡El stock está perfecto! No hay ningún producto por debajo del mínimo. 🎉
                         </div>
                     )}
                 </div>
