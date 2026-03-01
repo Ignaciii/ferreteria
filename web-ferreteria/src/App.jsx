@@ -24,7 +24,7 @@ function App() {
       
       <div className="container mt-5">
         
-        <h1 className="text-center mb-4 display-5 fw-bold">🛠️ Ferretería Electronor 🪛</h1>
+        <h1 className="text-center mb-4 display-5 fw-bold">🛠️ Ferretería Electronor 🔨</h1>
 
         {/* --- AHORA TENEMOS 5 BOTONES EN LA BOTONERA --- */}
         <div className="d-flex justify-content-center mb-5 gap-2 flex-wrap">

@@ -74,39 +74,59 @@ const FormularioCarga = ({ productoEditar, alTerminar }) => {
         });
     }
 
+    // Nueva función para bloquear teclas raras en los números
+    const bloquearInvalidos = (e) => {
+        if (['-', '+', 'e', 'E'].includes(e.key)) {
+            e.preventDefault();
+        }
+    };
+
     const manejarCambio = (evento) => {
         const { name, value } = evento.target;
-        let nuevoProducto = { ...producto, [name]: value };
+        
+        // Freno de mano extra: si pegan un número negativo con Ctrl+V, lo volvemos positivo o 0
+        let valLimpio = value;
+        if (evento.target.type === 'number' && parseFloat(value) < 0) {
+            valLimpio = Math.abs(value);
+        }
+
+        let nuevoProducto = { ...producto, [name]: valLimpio };
+
+        const costo = parseFloat(name === 'precioCosto' ? valLimpio : producto.precioCosto) || 0;
+        const porc = parseFloat(name === 'porcentaje' ? valLimpio : producto.porcentaje) || 0;
+        const publico = parseFloat(name === 'precioPublico' ? valLimpio : producto.precioPublico) || 0;
 
         if (name === 'precioCosto' || name === 'porcentaje') {
-            const costo = parseFloat(name === 'precioCosto' ? value : producto.precioCosto) || 0;
-            const porc = parseFloat(name === 'porcentaje' ? value : producto.porcentaje) || 0;
             const precioFinal = costo + (costo * (porc / 100));
-            nuevoProducto.precioPublico = precioFinal.toFixed(2);
+            nuevoProducto.precioPublico = Math.round(precioFinal);
+        } else if (name === 'precioPublico') {
+            if (costo > 0) {
+                const nuevoPorc = ((publico - costo) / costo) * 100;
+                nuevoProducto.porcentaje = nuevoPorc.toFixed(2); 
+            }
         }
+        
         setProducto(nuevoProducto);
     }
 
     const guardarProducto = (evento) => {
         evento.preventDefault();
         
-        // Validaciones estrictas
         if (parseFloat(producto.precioCosto) <= 0) {
             Swal.fire({ title: 'Atención', text: 'El precio de costo no puede ser $0.', icon: 'warning', background: '#1f1f1f', color: '#fff' });
             return;
         }
-        if (parseInt(producto.stockActual) <= 0 && !producto.id) { // Solo rompe las bolas si es nuevo
-            Swal.fire({ title: 'Atención', text: 'El stock inicial debe ser mayor a 0.', icon: 'warning', background: '#1f1f1f', color: '#fff' });
+        if (parseInt(producto.stockActual) < 0 && !producto.id) { 
+            Swal.fire({ title: 'Atención', text: 'El stock inicial no puede ser menor a 0.', icon: 'warning', background: '#1f1f1f', color: '#fff' });
             return;
         }
 
         const swalDark = { background: '#1f1f1f', color: '#fff' };
 
-        // Forzamos el tipo de dato para que no viajen strings al backend
         const productoParaGuardar = {
             ...producto,
             precioCosto: parseFloat(producto.precioCosto) || 0,
-            precioPublico: parseFloat(producto.precioPublico) || 0,
+            precioPublico: parseFloat(producto.precioPublico) || 0, 
             stockActual: parseInt(producto.stockActual) || 0,
             puntoReposicion: parseInt(producto.puntoReposicion) || 0
         };
@@ -134,14 +154,8 @@ const FormularioCarga = ({ productoEditar, alTerminar }) => {
                     <label className="form-label">Rubro</label>
                     <div className="input-group shadow-sm">
                         <input 
-                            type="text" 
-                            className="form-control" 
-                            name="rubro" 
-                            placeholder="Ej: Pinturería..."
-                            value={producto.rubro} 
-                            onChange={manejarCambio} 
-                            required 
-                            autoComplete="off"
+                            type="text" className="form-control" name="rubro" placeholder="Ej: Pinturería..."
+                            value={producto.rubro} onChange={manejarCambio} required autoComplete="off"
                         />
                         <select 
                             className="form-select fw-bold text-dark" 
@@ -178,14 +192,16 @@ const FormularioCarga = ({ productoEditar, alTerminar }) => {
 
                 <div className="col-md-4">
                     <label className="form-label">Stock Actual</label>
+                    {/* Agregado onKeyDown acá */}
                     <input type="number" className="form-control" name="stockActual" min="0"
-                        value={producto.stockActual} onChange={manejarCambio} required />
+                        value={producto.stockActual} onChange={manejarCambio} onKeyDown={bloquearInvalidos} required />
                 </div>
 
                 <div className="col-md-4">
                     <label className="form-label">Stock Mínimo</label>
+                    {/* Agregado onKeyDown acá */}
                     <input type="number" className="form-control" name="puntoReposicion" min="0"
-                        value={producto.puntoReposicion} onChange={manejarCambio} required />
+                        value={producto.puntoReposicion} onChange={manejarCambio} onKeyDown={bloquearInvalidos} required />
                 </div>
 
                 <div className="col-12 mt-4">
@@ -208,21 +224,24 @@ const FormularioCarga = ({ productoEditar, alTerminar }) => {
                             <div className="row g-3">
                                 <div className="col-md-4">
                                     <label className="form-label">Precio Costo ($)</label>
+                                    {/* Agregado onKeyDown acá */}
                                     <input type="number" className="form-control" name="precioCosto" 
-                                        min="0" step="0.01" value={producto.precioCosto} onChange={manejarCambio} required />
+                                        min="0" step="0.01" value={producto.precioCosto} onChange={manejarCambio} onKeyDown={bloquearInvalidos} required />
                                 </div>
                                 <div className="col-md-4">
                                     <label className="form-label">Recargo (%)</label>
                                     <div className="input-group">
+                                        {/* Agregado onKeyDown acá */}
                                         <input type="number" className="form-control border-success" name="porcentaje" 
-                                            min="0" value={producto.porcentaje} onChange={manejarCambio} required/>
+                                            min="0" step="0.01" value={producto.porcentaje} onChange={manejarCambio} onKeyDown={bloquearInvalidos} required/>
                                         <span className="input-group-text bg-success text-white">%</span>
                                     </div>
                                 </div>
                                 <div className="col-md-4">
                                     <label className="form-label fw-bold text-warning">Precio al Público ($)</label>
+                                    {/* Agregado onKeyDown acá */}
                                     <input type="number" className="form-control bg-dark text-warning fw-bold" name="precioPublico" 
-                                        value={producto.precioPublico} readOnly />
+                                        step="1" min="0" value={producto.precioPublico} onChange={manejarCambio} onKeyDown={bloquearInvalidos} required />
                                 </div>
                             </div>
                         )}
